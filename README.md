@@ -1,44 +1,44 @@
-# SoraCargo — Arsitektur Multi-Tier & Multi-App
+# SoraCargo — Enterprise Maritime & Multimodal Logistics Platform
 
-Repositori terintegrasi platform logistik kargo **SoraCargo**, dirancang dengan pemisahan aplikasi (*multi-app isolation*) dan segmentasi jaringan tingkat enterprise (*Public*, *Semi-Private Regional VPN*, dan *Strictly Private Admin*).
+Platform manajemen logistik kargo maritim dan multimoda terintegrasi berbasis **Laravel Monorepo**, dirancang dengan pemisahan aplikasi mandiri (*multi-app isolation*), segmentasi jaringan tingkat enterprise (*Public*, *Semi-Private Regional VPN*, dan *Strictly Private Admin*), serta orkestrasi container berbasis **Podman**.
 
 ---
 
-## 1. Topologi Jaringan & Akses Keamanan
+## 1. Topologi Jaringan & Tingkatan Akses Keamanan
+
+SoraCargo menerapkan prinsip *Defense in Depth* dan isolasi jaringan ketat:
 
 ```text
 [ INTERNET PUBLIK ] ──────► customer.soracargo.com ──► apps/customer (Port 8001)
-                            (Semua Pengguna Publik)
+                            (Semua Pengguna Publik / Shipper)
 
 [ REGIONAL VPN ]    ──────► ops-id.soracargo.com   ──► apps/operator (Port 8002)
-                            (Hanya IP Gateway VPN Negara Cabang)
+                            (Hanya IP Gateway VPN Cabang: ID, SG, MY)
 
-[ PRIVATE LAPTOP/MESH] ───► admin.soracargo.internal ─► apps/admin   (Port 8003)
-                            (Hanya IP Laptop Developer / Private WireGuard)
+[ STRICTLY PRIVATE ] ─────► admin.soracargo.internal ─► apps/admin   (Port 8003)
+                            (Hanya IP Laptop Developer / Private WireGuard Mesh)
                                     │
                                     ▼
                          [ DATABASE TERPUSAT ]
-                         (PostgreSQL / Redis)
+                         (PostgreSQL 16 & Redis)
 ```
 
 | Aplikasi | Tier Keamanan | Target Pengguna | Karakteristik Akses |
 | :--- | :--- | :--- | :--- |
-| **`apps/customer`** | **Public** | Pelanggan / Shipper | Akses internet umum tanpa VPN. Tracking radar, cek tarif, AI assistant. |
-| **`apps/operator`** | **Semi-Private** | Tim Dispatcher / Lapangan | Wajib koneksi VPN regional negara masing-masing (ID, SG, MY). Input kargo, status armada. |
-| **`apps/admin`** | **Strictly Private** | Superadmin Global | Terisolasi 100% dari internet publik. Akses hanya dari laptop admin / Tailscale / SSH Tunnel. |
+| **`apps/customer`** | **Public** | Pelanggan / Shipper | Akses internet umum tanpa VPN. Tracking radar armada, kalkulator tarif real-time, AI copilot, dan unduh dokumen B/L. |
+| **`apps/operator`** | **Semi-Private** | Tim Dispatcher / Lapangan | Wajib terhubung ke VPN gateway regional (ID, SG, MY). Input manifest kargo, koordinasi supir/nahkoda, update status bongkar muat. |
+| **`apps/admin`** | **Strictly Private** | Superadmin Global | Terisolasi 100% dari internet publik. Akses hanya melalui IP laptop terdaftar via WireGuard/Tailscale atau SSH Tunnel. |
 
 ---
 
-## 2. Struktur Direktori Proyek
+## 2. Struktur Direktori Monorepo
 
 ```text
 SoraCargo/
 ├── apps/
-│   ├── customer/            # Laravel App: Portal Pelanggan Publik
-│   ├── operator/            # Laravel App: Dispatcher Armada (VPN Regional)
-│   │   └── app/Http/Controllers/Auth/OperatorActivationController.php
-│   └── admin/               # Laravel App: Superadmin Global (Private Laptop)
-│       └── app/Http/Controllers/OperatorManagement/OperatorInvitationController.php
+│   ├── customer/            # Laravel App: Portal Pelanggan Publik (Port 8001)
+│   ├── operator/            # Laravel App: Dispatcher Armada (VPN Regional, Port 8002)
+│   └── admin/               # Laravel App: Superadmin Global (Private Laptop, Port 8003)
 │
 ├── packages/
 │   └── core-domain/         # Shared Composer Package (Single Source of Truth)
@@ -57,140 +57,68 @@ SoraCargo/
 │   │   └── Containerfile    # Base runtime PHP-FPM 8.3 & Extensions
 │   └── podman-compose.yml   # Orkestrasi multi-container Podman
 │
-└── README.md                # Dokumentasi arsitektur proyek
+├── docs/                    # Pusat Dokumentasi Arsitektur & Bisnis
+│   ├── architecture.md
+│   ├── operator-lifecycle.md
+│   ├── communication-flow.md
+│   └── shipping-and-financials.md
+│
+└── README.md                # Ringkasan Eksekutif & Hub Proyek
 ```
 
 ---
 
-## 3. Strategi Single Source of Truth (`packages/core-domain`)
+## 3. Pusat Dokumentasi Teknis & Operasional (`docs/`)
 
-Agar tidak terjadi duplikasi model Eloquent dan migrasi database di 3 aplikasi Laravel:
-1. Model bersama (`User`, `Cargo`, `Fleet`, `TrackingEvent`, `Invoice`) disimpan di `packages/core-domain/src/`.
-2. Setiap aplikasi (`customer`, `operator`, `admin`) memuat package ini via path lokal di `composer.json`:
-   ```json
-   "repositories": [
-       {
-           "type": "path",
-           "url": "../../packages/core-domain"
-       }
-   ],
-   "require": {
-       "soracargo/core-domain": "@dev"
-   }
-   ```
-3. Migrasi database cukup dijalankan dari salah satu app (biasanya `admin`) atau script deployment terpusat.
+Dokumentasi arsitektur dan proses bisnis disusun secara modular:
+
+| Dokumen | Rangkuman Isi | Tautan Langsung |
+| :--- | :--- | :--- |
+| **Arsitektur & Infrastruktur** | Segmentasi jaringan 3-tier, spesifikasi Podman & Oracle Cloud Infrastructure (OCI Ampere A1), single source of truth `core-domain`. | [docs/architecture.md](file:///home/leon/Downloads/SoraCargo/docs/architecture.md) |
+| **Siklus Hidup Operator** | Tata kelola akun operator (*Zero Public Registration*), alur undangan token 24 jam, pemisahan peran (*Domestic* vs. *International*), setup 2FA, dan kendali Superadmin. | [docs/operator-lifecycle.md](file:///home/leon/Downloads/SoraCargo/docs/operator-lifecycle.md) |
+| **Alur Komunikasi & Gateway** | Dukungan berjenjang (*Tiered Support*), perutean WhatsApp & Email Gateway, integrasi Baileys, serta studi kasus nyata (Badai Selat Madura & Kargo Rusak Air Asin). | [docs/communication-flow.md](file:///home/leon/Downloads/SoraCargo/docs/communication-flow.md) |
+| **Pengiriman & Finansial** | Alur kargo Domestik vs. Internasional (PEB/PIB, HS Code, Incoterms, Jalur Merah/Hijau Bea Cukai), matriks bagi hasil (*Revenue Split*), dan sistem *Milestone Escrow*. | [docs/shipping-and-financials.md](file:///home/leon/Downloads/SoraCargo/docs/shipping-and-financials.md) |
 
 ---
 
-## 4. Menjalankan Menggunakan Podman
+## 4. Panduan Menjalankan Lingkungan (Podman)
 
 ### Prasyarat:
-- Podman & `podman-compose` terinstal di sistem Anda.
+- Linux / macOS dengan **Podman** dan **podman-compose** terinstal.
+- PHP 8.3+ dan Composer 2.7+ (untuk pengembangan lokal non-container).
 
-### Perintah Operasional:
+### Menjalankan Seluruh Stack:
 ```bash
-# Pindah ke direktori podman
+# 1. Pindah ke direktori podman
 cd podman
 
-# Jalankan seluruh stack (Gateway, 3 Laravel Apps, Database Postgres, Redis)
+# 2. Jalankan seluruh container di background
 podman-compose up -d --build
 
-# Cek status container yang sedang berjalan
+# 3. Periksa status kontainer aktif
 podman ps
-
-# Menghentikan container
-podman-compose down
 ```
 
-### Konfigurasi Domain Lokal untuk Pengujian:
-Tambahkan baris berikut pada `/etc/hosts` di laptop Anda:
+### Konfigurasi Domain Pengujian Lokal (`/etc/hosts`):
+Tambahkan baris berikut pada berkas `/etc/hosts` perangkat Anda untuk mengakses ketiga portal:
 ```text
 127.0.0.1  customer.soracargo.local
 127.0.0.1  ops.soracargo.local
 127.0.0.1  admin.soracargo.local
 ```
 
----
-
-## 5. Hierarki Komunikasi Berjenjang (Email & WhatsApp Gateway)
-
-Platform menerapkan pola **Tiered Support & Operational Escalation (Dukungan Berjenjang)** agar komunikasi terstruktur dan Admin terlindungi dari beban pesan harian:
-
-```text
-┌─────────────────┐       (Pertanyaan rute, status kargo, dokumen B/L, komplain)
-│    CUSTOMER     │ ─────────────────────────────────────────────────────────────► ┌──────────────────┐
-└─────────────────┘                                                                │     OPERATOR     │
-                                                                                   │ (Regional Hub /  │
-                                                                                   │    Dispatcher)   │
-                                                                                   └────────┬─────────┘
-                                                                                            │
-                                          (Eskalasi kendala kritis, persetujuan biaya,      │
-                                           asuransi, legalitas, anomali armada)             │
-                                                                                            ▼
-                                                                                   ┌──────────────────┐
-                                                                                   │   SUPERADMIN     │
-                                                                                   │ (Private Laptop) │
-                                                                                   └──────────────────┘
-```
-
-### Aturan Alur Komunikasi:
-1. **Tier 1: Customer $\longrightarrow$ Operator (First Line of Defense)**
-   - **Tujuan**: Menangani 90% aktivitas dan pertanyaan rutin harian pelanggan.
-   - **Email Gateway**:
-     - Email konfirmasi booking, manifest jalan, dan notifikasi posisi kargo dikirim dengan *Reply-To* mengarah ke email **Operator Regional/Cabang** terkait (misal `ops.jkt@soracargo.com` atau `ops.sub@soracargo.com`).
-     - Jika Customer membalas email notifikasi atau mengajukan keluhan via form kontak, tiket email masuk ke antrean inbox Operator terkait.
-   - **WhatsApp Gateway**:
-     - Tombol *Customer Support* di portal Customer mengarahkan chat langsung ke nomor WhatsApp Operator Dispatcher regional.
-     - Bot WhatsApp meneruskan pertanyaan status kargo langsung ke sistem operator setempat.
-   - **Prinsip**: Customer **tidak pernah** memiliki akses email atau nomor kontak langsung ke Superadmin Global.
-
-2. **Tier 2: Operator $\longrightarrow$ Admin (Escalation & Approvals)**
-   - **Tujuan**: Menangani 10% kasus khusus yang membutuhkan wewenang manajerial/finansial tingkat tinggi.
-   - **Email Gateway**:
-     - Jika terjadi kerusakan kargo berat, keterlambatan cuaca ekstrem, atau sengketa klaim asuransi di atas batas limit wewenang operator, Operator menekan tombol **"Eskalasi Tiket ke Admin"**.
-     - Sistem secara otomatis mengirimkan email resmi berisi ringkasan kronologi insiden, dokumen lampiran B/L, dan bukti foto ke email privat Admin (`admin@soracargo.internal`).
-   - **WhatsApp Gateway**:
-     - Sistem mengirimkan alert darurat prioritas tinggi ke WhatsApp Admin:
-       > *"🚨 [ALERT ESKALASI OPS #OPS-402] Armada SRA-TRK-1044 mengalami kendala mesin di Tol Trans-Jawa KM 372. Operator mengajukan pergantian unit dan biaya towing darurat. Butuh approval segera."*
-   - **Penyelesaian**: Admin meninjau dari portal privat dan memberikan persetujuan/kebijakan (*Approve/Reject*), lalu sistem mengabari Operator untuk eksekusi ke Customer.
-
-3. **Manajemen Service Gateway (Admin Only)**
-   - Seluruh pengelolaan fisik WhatsApp Gateway (pairing session, scan QR code, status koneksi device) dan kredensial SMTP Email Gateway dikelola secara eksklusif dari dashboard **`apps/admin`**.
-   - Customer dan Operator hanya bertindak sebagai *consumer* (pemakai layanan kirim pesan) tanpa akses ke konfigurasi server gateway.
+### Port Mapping Default:
+- `http://customer.soracargo.local` $\rightarrow$ Nginx Proxy $\rightarrow$ `apps/customer:8001`
+- `http://ops.soracargo.local` $\rightarrow$ Nginx Proxy $\rightarrow$ `apps/operator:8002` (Simulasi IP Whitelist)
+- `http://admin.soracargo.local` $\rightarrow$ Nginx Proxy $\rightarrow$ `apps/admin:8003` (Simulasi IP Whitelist)
+- PostgreSQL: Port `5432` (Internal Bridge)
+- Redis Cache: Port `6379` (Internal Bridge)
 
 ---
 
-## 6. Alur Registrasi & Onboarding Akun Operator (Request & Invitation)
+## 5. Ringkasan Fitur Unggulan
 
-Untuk menjamin keamanan data radar kargo dan jadwal armada, **Operator TIDAK memiliki registrasi publik terbuka**. Pendaftaran akun menggunakan alur **Approval & Token Invitation**:
-
-```text
-1. REQUEST ACCESS
-   Calon Operator mengajukan permohonan akses:
-   👉 Mengisi data: Nama, Email Kantor, ID Karyawan, Cabang Wilayah Penugasan.
-          │
-          ▼
-2. REVIEW & APPROVAL OLEH ADMIN
-   Superadmin Global meninjau permohonan di dashboard admin:
-   👉 Jika valid, Admin klik [Approve & Invite].
-          │
-          ▼
-3. EMAIL GATEWAY MENGIRIM LINK UNDANGAN
-   Email Gateway mengirimkan tautan token unik (berlaku 24 jam):
-   👉 URL: https://ops.soracargo.com/register/invite?token=xyz123...
-          │
-          ▼
-4. OPERATOR MEMBUKA EMAIL & AKTIVASI MANDIRI
-   Operator mengklik link undangan di email:
-   👉 Data Identitas (Nama, Email, Wilayah Hub) TERKUNCI (Read-Only).
-   👉 Operator hanya mengisi: Password Baru & Verifikasi 2FA (WA OTP / Authenticator App).
-          │
-          ▼
-5. AKUN BERUBAH MENJADI ACTIVE
-   - Status akun berubah dari PENDING_INVITATION menjadi ACTIVE.
-   - Token undangan langsung dihanguskan (single-use token).
-   - Audit log mencatat IP address, waktu aktivasi, dan perangkat kerja operator.
-   - Operator langsung diarahkan ke Dashboard Operator sesuai regional hub-nya.
-```
-
-
+- **Radar Tracking Interaktif**: Visualisasi posisi kapal kontainer samudra dan armada truk darat dengan koordinat GPS real-time.
+- **Deep Navy Glass Bento Grid**: Antarmuka modern dengan kontras tinggi, navigasi intuitif, dan responsif untuk pengirim (*shipper*).
+- **Single Source of Truth (`packages/core-domain`)**: Satu basis kode untuk model database, status kargo, validasi DTO, dan event business logic di ketiga portal.
+- **Milestone Escrow Protection**: Menjamin transparansi alokasi pembayaran bagi Admin (10-15%), Operator (60-80%), dan Pajak/Regulasi (5-25%).
