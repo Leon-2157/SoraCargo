@@ -151,3 +151,4 @@ Untuk menjamin kedaulatan data dan mencegah penyalahgunaan nomor resmi perusahaa
   - Restart service WhatsApp Gateway tanpa mengganggu container aplikasi utama.
   - Pengaturan kuota kirim per jam (*rate-limiting*) untuk mencegah nomor WhatsApp terblokir oleh Meta.
   - Pengaturan template pesan otomatis (OTP, Booking Confirmed, Delivery Order Ready).
+

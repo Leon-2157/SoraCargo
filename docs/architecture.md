@@ -98,3 +98,4 @@ Untuk mencegah duplikasi kode Model Eloquent, Enums status, dan migrasi database
 ### Jaringan Podman (`podman-compose.yml`):
 - **`sora-network`**: Jaringan komunikasi antara web gateway Nginx dan aplikasi PHP-FPM.
 - **`sora-db-network`**: Jaringan internal tertutup khusus untuk koneksi aplikasi ke database PostgreSQL dan Redis.
+

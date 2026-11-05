@@ -156,3 +156,4 @@ Jika selama proses pengiriman terjadi anomali (barang rusak, koli hilang, atau k
 1. **Freeze Milestone**: Superadmin dapat membekukan pencairan Milestone 2 atau Milestone 3 secara instan melalui portal admin.
 2. **Klaim Asuransi**: Operator mengunggah Berita Acara Kerusakan Barang (BAP). Tim asuransi mitra SoraCargo memproses ganti rugi.
 3. **Penyelesaian Dana**: Jika kerusakan murni kelalaian vendor armada, dana escrow yang ditahan dialihkan sebagai kompensasi pengembalian dana (*refund*) kepada pelanggan.
+

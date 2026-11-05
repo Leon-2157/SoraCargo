@@ -164,3 +164,4 @@ Superadmin memegang kendali penuh atas daur hidup seluruh akun operator di selur
 1. **Mutasi Regional Hub**: Superadmin dapat memindahkan penugasan operator dari satu pelabuhan ke pelabuhan lain (misal dari Hub Jakarta ke Hub Batam) secara instan. Seluruh akses kargo otomatis tersinkronisasi ke wilayah baru.
 2. **Emergency Kill-Switch (Revoke Session)**: Jika perangkat operator hilang atau dicurigai dibobol, Superadmin dapat menekan tombol **"Revoke All Sessions"** di dashboard admin, yang seketika menghanguskan token JWT/session Redis dan memutus koneksi operator.
 3. **Audit Trail Lengkap**: Setiap aksi operator (input kargo, ubah status manifest, eskalasi tiket) tersimpan dengan riwayat audit (*who, what, when, IP address*).
+
