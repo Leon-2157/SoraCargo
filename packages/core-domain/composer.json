@@ -1,0 +1,12 @@
+{
+    "name": "soracargo/core-domain",
+    "description": "Shared Domain Models, Enums, and Value Objects for SoraCargo Applications",
+    "type": "library",
+    "license": "proprietary",
+    "autoload": {
+        "psr-4": {
+            "SoraCargo\\Core\\": "src/"
+        }
+    }
+}
+

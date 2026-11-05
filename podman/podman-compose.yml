@@ -1,0 +1,94 @@
+version: '3.8'
+
+services:
+  # Nginx Gateway Reverse Proxy (Routing Public vs VPN vs Private)
+  web-gateway:
+    image: nginx:alpine
+    container_name: soracargo-gateway
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ../apps:/var/www/apps:ro
+    networks:
+      - sora-network
+    depends_on:
+      - app-customer
+      - app-operator
+      - app-admin
+
+  # App 1: Customer Portal (Public Facing)
+  app-customer:
+    build:
+      context: ./php
+      dockerfile: Containerfile
+    container_name: soracargo-customer
+    restart: unless-stopped
+    volumes:
+      - ../apps/customer:/var/www/apps/customer
+      - ../packages:/var/www/packages
+    networks:
+      - sora-network
+      - sora-db-network
+
+  # App 2: Operator Portal (Semi-Private Regional VPN)
+  app-operator:
+    build:
+      context: ./php
+      dockerfile: Containerfile
+    container_name: soracargo-operator
+    restart: unless-stopped
+    volumes:
+      - ../apps/operator:/var/www/apps/operator
+      - ../packages:/var/www/packages
+    networks:
+      - sora-network
+      - sora-db-network
+
+  # App 3: Global Admin Portal (Private Admin / Laptop)
+  app-admin:
+    build:
+      context: ./php
+      dockerfile: Containerfile
+    container_name: soracargo-admin
+    restart: unless-stopped
+    volumes:
+      - ../apps/admin:/var/www/apps/admin
+      - ../packages:/var/www/packages
+    networks:
+      - sora-network
+      - sora-db-network
+
+  # Database Terpusat (Shared SSOT Data)
+  postgres:
+    image: postgres:16-alpine
+    container_name: soracargo-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: soracargo_db
+      POSTGRES_USER: soracargo_user
+      POSTGRES_PASSWORD: secret_password
+    volumes:
+      - sora-db-data:/var/lib/postgresql/data
+    networks:
+      - sora-db-network
+
+  # Redis Cache & Realtime Queue
+  redis:
+    image: redis:alpine
+    container_name: soracargo-redis
+    restart: unless-stopped
+    networks:
+      - sora-db-network
+
+networks:
+  sora-network:
+    driver: bridge
+  sora-db-network:
+    internal: true # Hanya bisa diakses internal antar container
+
+volumes:
+  sora-db-data:
+
