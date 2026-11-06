@@ -62,7 +62,43 @@ Setiap notifikasi email yang keluar dari SoraCargo memiliki konfigurasi *Header*
 
 ---
 
-## 3. Skenario Operasional Nyata (Real-World Case Studies)
+## 3. Standar SLA Respons Operator & Auto-Escalation Tiket
+
+Untuk memastikan kualitas layanan pelanggan (*Service Level Agreement*) dan mencegah keluhan tertahan tanpa kepastian, SoraCargo memberlakukan automasi pemantauan waktu respons:
+
+```mermaid
+flowchart LR
+    A["0 - 30 Detik<br/>Bot Auto-Reply<br/>(Radar Status)"] --> B["5 - 15 Menit<br/>SLA Staf Operator<br/>(Claim & Chat Manual)"]
+    B --> C["Menit ke-16<br/>⚠️ Peringatan Internal<br/>(Bot Alert ke Grup Cabang)"]
+    C --> D["Menit ke-31 - 60<br/>Level 2: Eskalasi<br/>(Pimpinan Cabang Hub)"]
+    D --> E["> 60 Menit<br/>🚨 Level 3: Superadmin<br/>(Penalti KPI & Intervensi)"]
+
+    classDef normal fill:#0f172a,stroke:#38bdf8,stroke-width:2px,color:#f8fafc;
+    classDef warn fill:#451a03,stroke:#f59e0b,stroke-width:2px,color:#fef3c7;
+    classDef alert fill:#450a0a,stroke:#ef4444,stroke-width:2px,color:#fef2f2;
+    class A,B normal;
+    class C,D warn;
+    class E alert;
+```
+
+### Rincian Tingkatan SLA:
+1. **0 – 30 Detik (Automated Instant Bot)**:
+   - Bot WhatsApp langsung menyapa nama shipper dan menampilkan data radar GPS kargo terakhir dari schema database `ops`.
+2. **5 – 15 Menit (SLA Staf Operator - Jam Operasional)**:
+   - Staf dispatcher yang bertugas wajib mengambil alih percakapan (*Claim Ticket*) dan membalas pesan teknis shipper secara personal.
+3. **Menit ke-16 (Peringatan Otomatis Antar-Staf)**:
+   - Jika dalam 15 menit belum ada balasan manual, bot internal mengirim alert ke grup koordinasi regional hub:
+     > *"⚠️ [REMINDER SLA] Shipper PT Maju Jaya (Resi: SRA-JKT-8821) telah menunggu 15 menit tanpa respons di Hub Tanjung Priok. Harap operator bertugas segera merespons."*
+4. **Menit ke-31 – 60 (Eskalasi Level 2: Branch Manager)**:
+   - Status tiket berubah menjadi `ESCALATED_TO_BRANCH_LEAD`. Notifikasi dikirim ke supervisor pelabuhan untuk reposisi penugasan operator.
+5. **> 60 Menit (Eskalasi Level 3: Superadmin Global)**:
+   - Tiket otomatis melompat ke dashboard `apps/admin` dengan label darurat: `SLA_BREACH_CRITICAL`.
+   - Sistem mencatat penalti performa (KPI Score) pada log operator yang bertugas pada shift tersebut.
+   - Superadmin dapat langsung membaca transkrip chat, menugaskan ulang ke operator cadangan, atau mengambil langkah korektif langsung.
+
+---
+
+## 4. Skenario Operasional Nyata (Real-World Case Studies)
 
 Untuk menggambarkan bagaimana sistem beroperasi di bawah tekanan operasional nyata, berikut adalah 2 studi kasus konkret:
 
@@ -91,6 +127,12 @@ sequenceDiagram
     Ops->>Ops: Instruksikan Tugboat Bergerak Menjemput Tongkang
     Ops->>Cust: Kirim Update: "Kapal telah dikawal tugboat, estimasi sandar 3 jam lagi."
 ```
+
+#### Protokol Penerapan Status WEATHER_HOLD:
+Sistem menerapkan mekanisme ganda (*Hybrid Advisory & Legal Trigger*):
+1. **Marine Weather API Advisory (Otomatis)**: Layanan cuaca internal mendeteksi gelombang tinggi > 2.5 meter atau angin kencang di rute pelayaran, lalu menandai rute pada peta radar dengan visual *High Wave Advisory* (Peringatan Kuning).
+2. **Otorisasi Legal Syahbandar (Manual Trigger)**: Status kargo tidak langsung dibatalkan secara sepihak oleh AI/sensor. Operator regional mengaktifkan status resmi **`WEATHER_HOLD`** setelah Kantor Kesyahbandaran dan Otoritas Pelabuhan (KSOP) setempat menerbitkan Maklumat Penundaan Surat Persetujuan Berlayar (SPB Hold).
+3. **Automasi Broadcast Shipper**: Saat `WEATHER_HOLD` diaktifkan operator, antrean pesan WhatsApp dan email otomatis mengirimkan tautan resmi maklumat Syahbandar kepada seluruh *consignee/shipper* yang muatannya berada di kapal tersebut.
 
 #### Kronologi Langkah:
 1. **Deteksi & Notifikasi**: Gelombang tinggi 3.5 meter di Selat Madura memaksa Syahbandar menerbitkan surat penundaan berlayar (SPB Hold). Status kargo otomatis berubah menjadi `WEATHER_HOLD` di portal customer.
@@ -131,6 +173,12 @@ sequenceDiagram
     Ops->>Cust: Konfirmasi Penyelesaian Klaim & Penggantian Kerugian
 ```
 
+#### Protokol Penerapan Status WEATHER_HOLD:
+Sistem menerapkan mekanisme ganda (*Hybrid Advisory & Legal Trigger*):
+1. **Marine Weather API Advisory (Otomatis)**: Layanan cuaca internal mendeteksi gelombang tinggi > 2.5 meter atau angin kencang di rute pelayaran, lalu menandai rute pada peta radar dengan visual *High Wave Advisory* (Peringatan Kuning).
+2. **Otorisasi Legal Syahbandar (Manual Trigger)**: Status kargo tidak langsung dibatalkan secara sepihak oleh AI/sensor. Operator regional mengaktifkan status resmi **`WEATHER_HOLD`** setelah Kantor Kesyahbandaran dan Otoritas Pelabuhan (KSOP) setempat menerbitkan Maklumat Penundaan Surat Persetujuan Berlayar (SPB Hold).
+3. **Automasi Broadcast Shipper**: Saat `WEATHER_HOLD` diaktifkan operator, antrean pesan WhatsApp dan email otomatis mengirimkan tautan resmi maklumat Syahbandar kepada seluruh *consignee/shipper* yang muatannya berada di kapal tersebut.
+
 #### Kronologi Langkah:
 1. **Penemuan di Lapangan**: Saat kontainer diturunkan di Pelabuhan Batu Ampar Batam, operator mencatat paking karet pintu kontainer sobek akibat cuaca badai di laut Jawa, menyebabkan 25 karton suku cadang elektronik basah air asin.
 2. **Dokumentasi Bukti**: Operator membuat *Berita Acara Kerusakan Barang (BAP)* di `apps/operator`, memotret segel peti kemas, mencatat nomor seri segel, dan melampirkan lembar deklarasi *Marine Cargo Policy*.
@@ -141,7 +189,7 @@ sequenceDiagram
 
 ---
 
-## 4. Manajemen Perangkat Gateway (Admin Only)
+## 5. Manajemen Perangkat Gateway (Admin Only)
 
 Untuk menjamin kedaulatan data dan mencegah penyalahgunaan nomor resmi perusahaan:
 - **Hak Akses**: Halaman manajemen WhatsApp Gateway dan Email SMTP hanya tersedia di dashboard **`apps/admin`** (`/admin/settings/gateways`).

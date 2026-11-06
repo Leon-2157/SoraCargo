@@ -165,3 +165,15 @@ Superadmin memegang kendali penuh atas daur hidup seluruh akun operator di selur
 2. **Emergency Kill-Switch (Revoke Session)**: Jika perangkat operator hilang atau dicurigai dibobol, Superadmin dapat menekan tombol **"Revoke All Sessions"** di dashboard admin, yang seketika menghanguskan token JWT/session Redis dan memutus koneksi operator.
 3. **Audit Trail Lengkap**: Setiap aksi operator (input kargo, ubah status manifest, eskalasi tiket) tersimpan dengan riwayat audit (*who, what, when, IP address*).
 
+---
+
+## 6. Keamanan Akses Operator Lapangan (Field Mobility & Device Fingerprinting)
+
+Untuk staf lapangan yang membutuhkan mobilitas tinggi saat memeriksa kontainer di dermaga atau depo (staf *checker / tally*):
+1. **Koneksi VPN Seluler Regional (WireGuard Mobile Profile)**: Perangkat tablet/ponsel staf lapangan terkonfigurasi dengan profil VPN cabang resmi untuk mengakses portal `ops`.
+2. **Device Fingerprinting (Pengikatan Perangkat)**:
+   - Saat login pertama kali, sistem merekam sidik jari peramban (*User-Agent, Canvas Fingerprint, Screen Resolution, IMEI/Device UUID*).
+   - Jika akun yang sama mencoba login dari perangkat tak dikenal, sistem memicu tantangan keamanan (*Security Challenge*) dan mewajibkan verifikasi OTP WhatsApp sebelum mengizinkan akses.
+3. **Pencatatan Koordinat Audit Penyerahan e-POD**: Setiap unggahan e-POD dan BAP kerusakan menyertakan stempel GPS koordinat perangkat yang dicocokkan dengan batas geofence pelabuhan terkait.
+
+

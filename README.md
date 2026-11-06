@@ -74,10 +74,10 @@ Dokumentasi arsitektur dan proses bisnis disusun secara modular:
 
 | Dokumen | Rangkuman Isi | Tautan Langsung |
 | :--- | :--- | :--- |
-| **Arsitektur & Infrastruktur** | Segmentasi jaringan 3-tier, spesifikasi Podman & Oracle Cloud Infrastructure (OCI Ampere A1), single source of truth `core-domain`. | [docs/architecture.md](file:///home/leon/Downloads/SoraCargo/docs/architecture.md) |
-| **Siklus Hidup Operator** | Tata kelola akun operator (*Zero Public Registration*), alur undangan token 24 jam, pemisahan peran (*Domestic* vs. *International*), setup 2FA, dan kendali Superadmin. | [docs/operator-lifecycle.md](file:///home/leon/Downloads/SoraCargo/docs/operator-lifecycle.md) |
-| **Alur Komunikasi & Gateway** | Dukungan berjenjang (*Tiered Support*), perutean WhatsApp & Email Gateway, integrasi Baileys, serta studi kasus nyata (Badai Selat Madura & Kargo Rusak Air Asin). | [docs/communication-flow.md](file:///home/leon/Downloads/SoraCargo/docs/communication-flow.md) |
-| **Pengiriman & Finansial** | Alur kargo Domestik vs. Internasional (PEB/PIB, HS Code, Incoterms, Jalur Merah/Hijau Bea Cukai), matriks bagi hasil (*Revenue Split*), dan sistem *Milestone Escrow*. | [docs/shipping-and-financials.md](file:///home/leon/Downloads/SoraCargo/docs/shipping-and-financials.md) |
+| **Arsitektur & Infrastruktur** | Segmentasi jaringan 3-tier, OCI Ampere A1 (alokasi RAM ~2.5GB dari 24GB), strategi 1 domain & subdomain routing, pemisahan aset frontend vs storage terpusat, tata kelola customer (Retail vs. Corporate B2B), dan 6 pilar Superadmin. | [docs/architecture.md](file:///home/leon/Downloads/SoraCargo/docs/architecture.md) |
+| **Siklus Hidup Operator** | Tata kelola akun operator (*Zero Public Registration*), alur undangan token 24 jam, pemisahan peran (*Domestic* vs. *International*), setup 2FA, kendali Superadmin, serta keamanan perangkat lapangan (*WireGuard & Device Fingerprinting*). | [docs/operator-lifecycle.md](file:///home/leon/Downloads/SoraCargo/docs/operator-lifecycle.md) |
+| **Alur Komunikasi & Gateway** | Dukungan berjenjang (*Tiered Support*), perutean WhatsApp & Email Gateway, integrasi Baileys, standar SLA respons 15 menit & auto-escalation, protokol *Weather Hold* resmi, serta studi kasus darurat lapangan. | [docs/communication-flow.md](file:///home/leon/Downloads/SoraCargo/docs/communication-flow.md) |
+| **Pengiriman & Finansial** | Alur kargo Domestik vs. Internasional, HS Code, Incoterms, penanganan Jalur Merah & Demurrage, matriks *Revenue Split*, denda pembatalan (*Sunk Costs*), sistem *Milestone Escrow*, mitigasi 3-tier gagal bayar B2B, transaksi Dual-Currency (24h Rate-Lock), kargo khusus (DG/Reefer), dan standarisasi penomoran semantik. | [docs/shipping-and-financials.md](file:///home/leon/Downloads/SoraCargo/docs/shipping-and-financials.md) |
 
 ---
 
